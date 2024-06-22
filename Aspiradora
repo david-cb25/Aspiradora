@@ -1,0 +1,211 @@
+import java.util.Random;
+import java.util.Scanner;
+
+public class Aspiradora {
+
+    private static final char LIMPIO = '.';
+    private static final char SUCIEDAD_NORMAL = 'o';
+    private static final char SUCIEDAD_PLUS = 'O';
+    private static final char SUCIEDAD_DOBLE_PLUS = '*';
+    private static final char SUCIEDAD_TRIPLE_PLUS = '0';
+    private static final String ASPIRADORA = "(0)";
+    private static final char BORDE_HORIZONTAL = '-';
+    private static final char BORDE_VERTICAL = '|';
+    private static final char ESQUINA = '+';
+
+    private char[][] habitacion;
+    private int filas;
+    private int columnas;
+    private int posX;
+    private int posY;
+    private int pasos;
+    private int intervaloMostrar;
+
+    public Aspiradora(int filas, int columnas, int intervaloMostrar) {
+        this.filas = filas;
+        this.columnas = columnas;
+        this.habitacion = new char[filas][columnas];
+        this.posX = 1;
+        this.posY = 1;
+        this.pasos = 0;
+        this.intervaloMostrar = intervaloMostrar;
+
+        inicializarHabitacion();
+    }
+
+    private void inicializarHabitacion() {
+        Random random = new Random();
+
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                if (i == 0 || i == filas - 1) {
+                    habitacion[i][j] = BORDE_HORIZONTAL;
+                    if (j == 0 || j == columnas - 1) {
+                        habitacion[i][j] = ESQUINA;
+                    }
+                } else if (j == 0 || j == columnas - 1) {
+                    habitacion[i][j] = BORDE_VERTICAL;
+                } else {
+                    double probabilidad = random.nextDouble();
+                    if (probabilidad < 0.2) {
+                        habitacion[i][j] = SUCIEDAD_NORMAL;
+                    } else if (probabilidad < 0.4) {
+                        habitacion[i][j] = SUCIEDAD_PLUS;
+                    } else if (probabilidad < 0.6) {
+                        habitacion[i][j] = SUCIEDAD_DOBLE_PLUS;
+                    } else if (probabilidad < 0.8) {
+                        habitacion[i][j] = SUCIEDAD_TRIPLE_PLUS;
+                    } else {
+                        habitacion[i][j] = LIMPIO;
+                    }
+                }
+            }
+        }
+    }
+
+    public void limpiar() {
+        while (haySuciedad()) {
+            mover();
+            limpiarCasilla();
+            pasos++;
+
+            if (pasos % intervaloMostrar == 0) {
+                System.out.println("Estado de la habitación después de " + pasos + " pasos:");
+                imprimirHabitacion();
+                System.out.println("Cantidad de basura restante: " + contarBasura());
+            }
+        }
+        imprimirHabitacion();
+        System.out.println("Habitación limpia!");
+        System.out.println("Pasos totales: " + pasos);
+        System.out.println("Cantidad de basura restante: " + contarBasura());
+        menu();
+    }
+
+    private boolean haySuciedad() {
+        for (int i = 1; i < filas - 1; i++) {
+            for (int j = 1; j < columnas - 1; j++) {
+                if (esSuciedad(habitacion[i][j])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean esSuciedad(char estado) {
+        return estado == SUCIEDAD_NORMAL || estado == SUCIEDAD_PLUS || estado == SUCIEDAD_DOBLE_PLUS || estado == SUCIEDAD_TRIPLE_PLUS;
+    }
+
+    private void mover() {
+        Random random = new Random();
+        int direccion = random.nextInt(4);
+
+        switch (direccion) {
+            case 0:
+                if (posX > 1 && !esObstaculo(posX - 1, posY)) {
+                    posX--;
+                }
+                break;
+            case 1:
+                if (posX < filas - 2 && !esObstaculo(posX + 1, posY)) {
+                    posX++;
+                }
+                break;
+            case 2:
+                if (posY > 1 && !esObstaculo(posX, posY - 1)) {
+                    posY--;
+                }
+                break;
+            case 3:
+                if (posY < columnas - 2 && !esObstaculo(posX, posY + 1)) {
+                    posY++;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private boolean esObstaculo(int x, int y) {
+        return habitacion[x][y] == BORDE_HORIZONTAL || habitacion[x][y] == BORDE_VERTICAL || habitacion[x][y] == ESQUINA;
+    }
+
+    private void limpiarCasilla() {
+        char estado = habitacion[posX][posY];
+        if (esSuciedad(estado)) {
+            habitacion[posX][posY] = LIMPIO;
+            System.out.println("Limpiando posición (" + posX + "," + posY + ")");
+        } else {
+            System.out.println("Moviendo a posición (" + posX + "," + posY + ")");
+        }
+    }
+
+    private int contarBasura() {
+        int count = 0;
+        for (int i = 1; i < filas - 1; i++) {
+            for (int j = 1; j < columnas - 1; j++) {
+                if (esSuciedad(habitacion[i][j])) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public void imprimirHabitacion() {
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                if (i == posX && j == posY) {
+                    System.out.print(ASPIRADORA + " ");
+                } else {
+                    char estado = habitacion[i][j];
+                    switch (estado) {
+                        case LIMPIO:
+                            System.out.print(".   ");
+                            break;
+                        case SUCIEDAD_NORMAL:
+                            System.out.print("ooo ");
+                            break;
+                        case SUCIEDAD_PLUS:
+                            System.out.print("000 ");
+                            break;
+                        case SUCIEDAD_DOBLE_PLUS:
+                            System.out.print("*** ");
+                            break;
+                        case SUCIEDAD_TRIPLE_PLUS:
+                            System.out.print("OOO ");
+                            break;
+                        case BORDE_HORIZONTAL:
+                        case BORDE_VERTICAL:
+                        case ESQUINA:
+                            System.out.print(estado + "   ");
+                            break;
+                    }
+                }
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+
+    private void menu() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Habitación limpia! ¿Quieres limpiar otra? (SI/NO)");
+        String respuesta = scanner.nextLine().trim().toUpperCase();
+        if (respuesta.equals("SI")) {
+            this.pasos = 0;
+            inicializarHabitacion();
+            limpiar();
+        } else {
+            System.out.println("Programa terminado.");
+        }
+    }
+
+    public static void main(String[] args) {
+        Aspiradora aspiradora = new Aspiradora(8, 8, 20);
+        aspiradora.imprimirHabitacion();
+        System.out.println("Iniciando limpieza...");
+        aspiradora.limpiar();
+    }
+}
